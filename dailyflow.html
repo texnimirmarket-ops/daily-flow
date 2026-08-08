@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Daily Flow — Perfect Time Picker & Stats</title>
+  <style>
+    :root {
+      --bg: #1C1917;
+      --card-bg: #292524;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #F97316;
+      --accent-hover: #EA580C;
+      --accent-glow: rgba(249, 115, 22, 0.25);
+      --text: #FAFAF9;
+      --text-muted: #A8A29E;
+      --item-bg: rgba(255, 255, 255, 0.05);
+      --circle-bg: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] {
+      --bg: #FAF8F5;
+      --card-bg: #FFFFFF;
+      --border: rgba(234, 88, 12, 0.15);
+      --accent: #EA580C;
+      --accent-hover: #C2410C;
+      --accent-glow: rgba(234, 88, 12, 0.15);
+      --text: #292524;
+      --text-muted: #78716C;
+      --item-bg: #FFF7ED;
+      --circle-bg: rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; padding-bottom: 90px; display: flex; justify-content: center; transition: 0.3s; }
+    
+    .app-container { display: grid; grid-template-columns: 240px 1fr; gap: 20px; max-width: 1200px; width: 100%; }
+    .card { background: var(--card-bg); border-radius: 24px; padding: 22px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+
+    .brand-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .brand { color: var(--accent); font-size: 22px; font-weight: 800; }
+    .theme-toggle { background: var(--item-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 14px; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+    .nav-item { padding: 14px 18px; margin-bottom: 8px; border-radius: 16px; color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+    .nav-item.active { background: var(--accent); color: #FFFFFF; font-weight: 700; }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; animation: fadeIn 0.25s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .section-title { font-size: 19px; font-weight: 700; margin-bottom: 16px; }
+
+    /* DASHBOARD */
+    .hero-banner {
+      background: linear-gradient(135deg, var(--accent) 0%, #C2410C 100%);
+      border-radius: 20px; padding: 24px; color: #FFFFFF; margin-bottom: 20px;
+      box-shadow: 0 10px 20px var(--accent-glow);
+    }
+    .hero-greeting { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .hero-quote { font-size: 14px; opacity: 0.95; line-height: 1.5; }
+
+    .congratulation-card {
+      background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 18px; padding: 16px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .congratulation-icon { font-size: 32px; }
+    .congratulation-title { font-size: 15px; font-weight: 800; color: #10B981; margin-bottom: 4px; }
+    .congratulation-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+    .stats-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--item-bg); border: 1px solid var(--border); padding: 16px; border-radius: 18px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-card-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .stat-card-value { font-size: 20px; font-weight: 800; color: var(--text); }
+    .stat-card-sub { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+    .progress-bar-bg { width: 100%; height: 8px; background: var(--circle-bg); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+
+    /* ITEM CARD */
+    .todo-item { 
+      display: flex; flex-direction: column; gap: 8px;
+      background: var(--card-bg); padding: 14px 16px; border-radius: 16px; margin-bottom: 10px; 
+      border: 1px solid var(--border); border-left: 5px solid var(--accent); 
+      cursor: pointer; transition: 0.2s;
+    }
+    .todo-item:hover { border-color: var(--accent); }
+    .todo-main-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-muted); }
+    .checkbox { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
+    .time-badge { background: var(--accent-glow); color: var(--accent); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+
+    /* STATISTIKA TAB */
+    .filter-tabs { display: flex; background: var(--item-bg); padding: 4px; border-radius: 14px; border: 1px solid var(--border); gap: 4px; margin-bottom: 20px; justify-content: space-between; }
+    .filter-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 8px 0; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; text-align: center; }
+    .filter-btn.active { background: var(--accent); color: #fff; }
+
+    .doughnut-wrapper { position: relative; width: 180px; height: 180px; margin: 10px auto 20px; }
+    .doughnut-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .doughnut-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .doughnut-val { font-size: 26px; font-weight: 800; color: var(--text); }
+    .doughnut-lbl { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+    .stats-breakdown { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; background: var(--item-bg); padding: 16px; border-radius: 18px; border: 1px solid var(--border); }
+
+    /* KALENDAR */
+    .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .cal-btn { background: var(--item-bg); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .month-click { font-size: 17px; font-weight: 800; cursor: pointer; color: var(--accent); transition: 0.2s; }
+    .month-click:hover { text-decoration: underline; opacity: 0.9; }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+    .cal-day-head { font-size: 12px; font-weight: 700; color: var(--text-muted); padding-bottom: 4px; }
+    
+    .cal-date { 
+      min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 14px; background: var(--item-bg); border: 1px solid var(--border); 
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; position: relative;
+    }
+    .cal-date:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .cal-date.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow); }
+    .cal-date.other-month { opacity: 0.25; }
+    .cal-date.is-today { border: 2px solid var(--accent); }
+
+    .todo-box { margin-top: 24px; background: var(--item-bg); padding: 18px; border-radius: 20px; border: 1px solid var(--border); }
+    .todo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+
+    /* OYLIK MAQSADLAR STILI */
+    .goal-item-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card-bg); padding: 12px 14px; border-radius: 14px;
+      border: 1px solid var(--border); transition: 0.2s;
+    }
+    .goal-item-card.done .goal-item-text {
+      text-decoration: line-through; color: var(--text-muted); opacity: 0.7;
+    }
+    .goal-item-left { display: flex; align-items: center; gap: 12px; flex: 1; cursor: pointer; }
+    .goal-item-text { font-size: 14px; font-weight: 600; color: var(--text); user-select: none; }
+    .delete-goal-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+    .delete-goal-btn:hover { color: #EF4444; }
+
+    /* FULLSCREEN TIMER MODAL */
+    .fullscreen-timer-modal {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--bg); z-index: 1000;
+      display: none; flex-direction: column; justify-content: space-between;
+      padding: 24px; animation: zoomIn 0.25s ease-out;
+    }
+    .fullscreen-timer-modal.active { display: flex; }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+    .fullscreen-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin: 0 auto; }
+    .fullscreen-actions { display: flex; gap: 10px; }
+    .icon-btn {
+      background: var(--item-bg); border: 1px solid var(--border); color: var(--text);
+      width: 42px; height: 42px; border-radius: 12px; font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+    }
+    .icon-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .fullscreen-body { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; }
+    
+    .timer-container-lg { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
+    .timer-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .circle-bg-path { fill: none; stroke: var(--circle-bg); stroke-width: 12; }
+    .circle-progress-path { 
+      fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; 
+      stroke-dasharray: 691; stroke-dashoffset: 0; transition: stroke-dashoffset 0.9s linear; 
+    }
+    .timer-text-wrap { position: absolute; text-align: center; }
+    .timer-time-lg { font-size: 52px; font-weight: 800; color: var(--text); }
+    .timer-mode-badge { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
+    .fs-task-title { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+
+    /* MINI TIMER */
+    .mini-timer-widget {
+      position: fixed; bottom: 80px; right: 20px; z-index: 999;
+      background: var(--card-bg); border: 1px solid var(--accent); border-radius: 16px;
+      padding: 10px 16px; display: none; align-items: center; gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); cursor: pointer;
+    }
+    .mini-timer-widget.active { display: flex; }
+
+    /* WHEEL PICKER */
+    .wheel-picker-container {
+      display: flex; gap: 12px; justify-content: center; align-items: center;
+      background: var(--item-bg); padding: 16px; border-radius: 20px;
+      border: 1px solid var(--border); margin-top: 14px; position: relative;
+    }
+    .wheel-column-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .wheel-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    
+    .wheel-box-wrapper { position: relative; width: 100%; height: 132px; }
+
+    .wheel-box {
+      position: relative; width: 100%; height: 132px; overflow-y: scroll;
+      scroll-snap-type: y mandatory; scrollbar-width: none; border-radius: 14px;
+      background: rgba(0,0,0,0.15); border: 1px solid var(--border);
+    }
+    .wheel-box::-webkit-scrollbar { display: none; }
+    .wheel-spacer { height: 44px; }
+    .wheel-item {
+      height: 44px; line-height: 44px; display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: var(--text-muted);
+      scroll-snap-align: center; cursor: pointer; transition: 0.2s;
+    }
+    .wheel-item.selected { font-size: 18px; font-weight: 800; color: var(--accent); }
+    
+    .wheel-center-highlight {
+      position: absolute; top: 44px; left: 0; right: 0; height: 44px;
+      border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
+      pointer-events: none; border-radius: 8px; background: var(--accent-glow); z-index: 2;
+    }
+
+    .color-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+    .color-option { width: 100%; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+    .color-option.selected { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+    .btn { background: var(--accent); border: none; color: #fff; padding: 12px 22px; border-radius: 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; }
+    .btn-secondary { background: var(--item-bg); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 10px; }
+
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border); padding: 8px 4px; justify-content: space-around; z-index: 90; }
+    .bottom-nav-item { color: var(--text-muted); font-size: 10px; text-align: center; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .bottom-nav-item.active { color: var(--accent); }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px); padding: 16px; }
+    .modal-content { background: var(--card-bg); padding: 22px; border-radius: 22px; width: 100%; max-width: 420px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .modal-input { width: 100%; padding: 12px; background: var(--item-bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; outline: none; }
+
+    @media (max-width: 850px) {
+      body { padding: 8px; padding-bottom: 85px; }
+      .app-container { grid-template-columns: 1fr; gap: 12px; }
+      .card { padding: 16px 14px; border-radius: 20px; }
+      .desktop-nav { display: none; }
+      
+      .brand-header { margin-bottom: 16px; }
+      .brand { font-size: 19px !important; }
+      .theme-toggle { padding: 6px 12px; font-size: 12px; border-radius: 12px; }
+
+      .hero-banner { padding: 16px; border-radius: 18px; margin-bottom: 14px; }
+      .hero-greeting { font-size: 17px; margin-bottom: 4px; }
+      .hero-quote { font-size: 12px; line-height: 1.4; opacity: 0.95; }
+
+      .congratulation-card { padding: 12px 14px; border-radius: 16px; margin-bottom: 14px; gap: 12px; }
+      .congratulation-icon { font-size: 26px; }
+      .congratulation-title { font-size: 14px; margin-bottom: 2px; }
+      .congratulation-text { font-size: 12px; }
+
+      .stats-cards-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+      .stat-card { padding: 10px 8px; border-radius: 14px; align-items: center; text-align: center; justify-content: center; }
+      .stat-card-title { font-size: 9px; }
+      .stat-card-value { font-size: 15px; font-weight: 800; }
+      .stat-card-sub { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+      .progress-bar-bg { height: 6px; margin-top: 4px; }
+
+      .section-title { font-size: 15px; margin-bottom: 12px; }
+      .todo-item { padding: 12px; border-radius: 14px; margin-bottom: 8px; gap: 6px; }
+      .todo-main-row { font-size: 13px; }
+      .time-badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; }
+
+      .timer-container-lg { width: 220px; height: 220px; }
+      .timer-time-lg { font-size: 42px; }
+
+      .bottom-nav { 
+        display: flex; 
+        position: fixed; 
+        bottom: 0; 
+        left: 0; 
+        width: 100%; 
+        background: rgba(41, 37, 36, 0.94); 
+        backdrop-filter: blur(12px); 
+        -webkit-backdrop-filter: blur(12px); 
+        border-top: 1px solid var(--border); 
+        padding: 8px 10px 12px 10px; 
+        justify-content: space-around; 
+        z-index: 990; 
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25); 
+      }
+      [data-theme="light"] .bottom-nav { 
+        background: rgba(255, 255, 255, 0.94); 
+      }
+      .bottom-nav-item { 
+        font-size: 10px; 
+        padding: 4px 10px; 
+        border-radius: 12px; 
+        transition: all 0.2s ease; 
+      }
+      .bottom-nav-item.active { 
+        background: var(--accent-glow); 
+        color: var(--accent); 
+        font-weight: 700; 
+        transform: translateY(-2px); 
+      }
+      .bottom-nav-item span:first-child { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- DESKTOP NAV -->
+  <div class="card desktop-nav">
+    <div class="brand" style="margin-bottom: 30px;">Daily Flow</div>
+    <div class="nav-item active" onclick="switchTab('dashboard', this)">🏠 Dashboard</div>
+    <div class="nav-item" onclick="switchTab('focus', this)">⏱️ Focus Room</div>
+    <div class="nav-item" onclick="switchTab('plans', this)">📅 Rejalar & Kalendar</div>
+    <div class="nav-item" onclick="switchTab('stats', this)">📊 Statistika</div>
+  </div>
+
+  <div class="card">
+    <div class="brand-header">
+      <div class="brand" style="font-size: 20px;" id="headerTitle">Dashboard</div>
+      <button class="theme-toggle" id="globalThemeBtn" onclick="toggleTheme()">☀️ Light</button>
+    </div>
+
+    <!-- 1. DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-view active">
+      <div class="hero-banner">
+        <div class="hero-greeting" id="heroGreeting">Salom, do'stim! 👋</div>
+        <div class="hero-quote" id="heroQuote">Bugun maqsadlaringiz sari katta qadam tashlash uchun ajoyib kun!</div>
+      </div>
+
+      <div class="congratulation-card" id="congratCard">
+        <div class="congratulation-icon" id="congratIcon">📊</div>
+        <div>
+          <div class="congratulation-title" id="congratTitle">Kunlik Natijangiz</div>
+          <div class="congratulation-text" id="congratText">Yuklanmoqda...</div>
+        </div>
+      </div>
+
+      <div class="stats-cards-grid">
+        <div class="stat-card">
+          <div class="stat-card-title">🔥 Streak</div>
+          <div class="stat-card-value" id="dashStreak">0 kun</div>
+          <div class="stat-card-sub">Uzluksiz</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-title">⏱️ Fokus</div>
+          <div class="stat-card-value" id="dashFocusHours">0 min</div>
+          <div class="stat-card-sub">Bajarildi</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-title">📝 Rejalar</div>
+          <div class="stat-card-value" id="dashTaskCount">0 / 0</div>
+          <div class="stat-card-sub" id="dashTaskPercent">0%</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="dashProgressBar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📌 Bugungi Vazifalar</span>
+        <button class="btn btn-sm btn-secondary" onclick="switchTab('plans', document.querySelectorAll('.desktop-nav .nav-item')[2] || document.querySelectorAll('.bottom-nav-item')[2])">Kalendar ➔</button>
+      </div>
+
+      <div id="dashTodoList" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- 2. FOCUS ROOM TAB -->
+    <div id="tab-focus" class="tab-view">
+      <div class="section-title">⏱️ Focus Room — Vazifani tanlang:</div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Fokus rejimini boshlash uchun <b>"▶ Boshlash"</b> tugmasiga bosing.
+      </p>
+
+      <div id="focusTodoList"></div>
+    </div>
+
+    <!-- 3. REJALAR VA KALENDAR TAB -->
+    <div id="tab-plans" class="tab-view">
+      <div class="calendar-nav">
+        <button class="cal-btn" onclick="changeMonth(-1)">◀</button>
+        <div class="month-click" id="calendarMonthTitle" onclick="openGoalModal()">Maqsadlar 🎯</div>
+        <button class="cal-btn" onclick="changeMonth(1)">▶</button>
+      </div>
+      
+      <div class="calendar-grid" id="calendarGrid"></div>
+
+      <div class="todo-box">
+        <div class="todo-header">
+          <div style="font-weight: 700;" id="selectedDateTitle">Kunlik rejalar:</div>
+          <button class="btn btn-sm" onclick="openTodoModal()">+ Yangi reja</button>
+        </div>
+        <div id="todoList"></div>
+      </div>
+    </div>
+
+    <!-- 4. STATISTIKA TAB -->
+    <div id="tab-stats" class="tab-view">
+      <div class="filter-tabs">
+        <button class="filter-btn" onclick="setStatFilter('day', this)">Kun</button>
+        <button class="filter-btn" onclick="setStatFilter('week', this)">Hafta</button>
+        <button class="filter-btn active" onclick="setStatFilter('month', this)">Oy</button>
+        <button class="filter-btn" onclick="setStatFilter('year', this)">Yil</button>
+        <button class="filter-btn" onclick="setStatFilter('all', this)">Barchasi</button>
+      </div>
+
+      <div class="doughnut-wrapper">
+        <svg class="doughnut-svg" viewBox="0 0 100 100" id="statSvg"></svg>
+        <div class="doughnut-inner">
+          <div class="doughnut-val" id="statHours">0 min</div>
+          <div class="doughnut-lbl">Jami Fokus</div>
+        </div>
+      </div>
+
+      <div class="stats-breakdown" id="statsBreakdown"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FULLSCREEN TIMER MODAL -->
+<div class="fullscreen-timer-modal" id="fullscreenTimerModal">
+  <div class="fullscreen-header">
+    <div class="brand" style="font-size: 18px;">Daily Flow Focus</div>
+    <div class="fullscreen-actions">
+      <button class="icon-btn" onclick="minimizeTimer()" title="Kichik qilish">🗕</button>
+      <button class="icon-btn" onclick="closeFullscreenTimer()" title="Yopish">✕</button>
+    </div>
+  </div>
+
+  <div class="fullscreen-body">
+    <div class="timer-mode-badge" id="timerModeBadge">Fokus Rejimi (25 daqiqa)</div>
+    <div class="fs-task-title" id="currentTaskDisplay">Tanlangan reja: ---</div>
+    
+    <div class="timer-container-lg">
+      <svg class="timer-svg" viewBox="0 0 240 240">
+        <circle class="circle-bg-path" cx="120" cy="120" r="105"></circle>
+        <circle class="circle-progress-path" id="progressPath" cx="120" cy="120" r="105" stroke-dasharray="660" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="timer-text-wrap">
+        <div class="timer-time-lg" id="timerDisplay">25:00</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; margin-top: 10px;">
+      <button class="btn" id="startBtn" style="min-width: 140px; font-size: 16px;" onclick="toggleTimer()">Boshlash</button>
+      <button class="btn btn-secondary" style="font-size: 16px;" onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- MINI TIMER -->
+<div class="mini-timer-widget" id="miniTimerWidget" onclick="maximizeTimer()">
+  <span style="font-size: 18px;">⏱️</span>
+  <div>
+    <div style="font-size: 13px; font-weight: 800; color: var(--accent);" id="miniTimerTime">25:00</div>
+    <div style="font-size: 10px; color: var(--text-muted); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="miniTimerTask">Vazifa...</div>
+  </div>
+  <span style="font-size: 12px; background: var(--accent-glow); color: var(--accent); padding: 2px 6px; border-radius: 6px; font-weight: 700;">⛶ Kattalashtirish</span>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bottom-nav-item active" onclick="switchTab('dashboard', this)"><span>🏠</span><span>Dash</span></div>
+  <div class="bottom-nav-item" onclick="switchTab('focus', this)"><span>⏱️</span><span>Focus</span></div>
+  <div class="bottom-nav-item" onclick="switchTab('plans', this)"><span>📅</span><span>Rejalar</span></div>
+  <div class="bottom-nav-item" onclick="switchTab('stats', this)"><span>📊</span><span>Stat</span></div>
+</div>
+
+<!-- REJA QO'SHISH MODALI -->
+<div class="modal" id="todoModal">
+  <div class="modal-content">
+    <h3>Yangi reja kiriting</h3>
+    <input type="text" id="todoInput" class="modal-input" placeholder="Vazifa nomi (masalan: Matematika)..." style="margin-top:10px;">
+    
+    <div class="wheel-picker-container">
+      <div class="wheel-column-wrap">
+        <div class="wheel-label">Soat</div>
+        <div class="wheel-box-wrapper">
+          <div class="wheel-center-highlight"></div>
+          <div class="wheel-box" id="hoursWheel" onscroll="handleWheelScroll('hours')">
+            <div class="wheel-spacer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: 22px; font-weight: 800; color: var(--accent); margin-top: 22px;">:</div>
+
+      <div class="wheel-column-wrap">
+        <div class="wheel-label">Daqiqa</div>
+        <div class="wheel-box-wrapper">
+          <div class="wheel-center-highlight"></div>
+          <div class="wheel-box" id="minsWheel" onscroll="handleWheelScroll('mins')">
+            <div class="wheel-spacer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size: 13px; font-weight: 700; margin-top: 14px;">Rangni tanlang:</div>
+    <div class="color-picker-grid" id="colorPickerGrid"></div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeTodoModal()">Yopish</button>
+      <button class="btn btn-sm" onclick="addTodo()">Qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<!-- OYLIK MAQSADLAR MODALI -->
+<div class="modal" id="goalModal">
+  <div class="modal-content">
+    <h3 id="goalModalTitle" style="font-size: 18px; font-weight: 800; display:flex; align-items:center; gap:6px;">
+      Oylik Maqsadlar 🎯
+    </h3>
+
+    <div style="display: flex; gap: 8px; margin: 16px 0;">
+      <input type="text" id="newGoalInput" class="modal-input" placeholder="Yangi maqsad..." style="flex:1;">
+      <button class="btn" style="white-space:nowrap; padding: 10px 18px; border-radius: 12px; font-size: 13px;" onclick="addMonthlyGoal()">Qo'shish</button>
+    </div>
+
+    <div id="goalListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; margin-bottom: 16px;"></div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeGoalModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const motivationalQuotes = [
+    "Bilim — kelajagingga qiladigan eng kuchli sarmoyang.",
+    "Bugun o‘rgangan narsang ertaga imkoniyatga aylanishi mumkin.",
+    "Har bir o‘qilgan sahifa seni maqsadingga yaqinlashtiradi.",
+    "Qiyin mavzu — sening rivojlanishing uchun yangi imkoniyat.",
+    "Tushunmagan narsangdan qo‘rqma; uni o‘rgan.",
+    "Savol berish — bilim olishning boshlanishidir.",
+    "Qiziqishni saqlab qolgan inson doimo rivojlanadi.",
+    "Har kuni ozgina o‘rganish katta natijaga olib keladi.",
+    "Kitob seni o‘zing borolmagan joylarga olib boradi.",
+    "O‘qish bugungi qiyinchilikni ertangi imkoniyatga aylantiradi.",
+    "Bilmagan so‘zingni o‘rganish — lug‘atingni emas, dunyoqarashingni kengaytiradi.",
+    "Har bir xato — o‘rganish uchun ma'lumot.",
+    "O‘rganish tezligi emas, davomiyligi muhim.",
+    "Bir kunlik kuchli harakatdan ko‘ra, har kungi izchillik kuchliroq.",
+    "Bilimning qiymati uni amalda qo‘llaganingda yanada oshadi.",
+    "O‘qigan narsang haqida savol ber.",
+    "Qiyin kitob seni kuchliroq o‘quvchiga aylantiradi.",
+    "Bugun tushunmagan narsangni ertaga tushunishing mumkin.",
+    "Bilim olishda sabr — katta ustunlik.",
+    "Har bir yangi tushuncha fikrlashingni o‘zgartiradi.",
+    "O‘qish — o‘zingning kelajakdagi versiyangni qurishdir.",
+    "Biror narsani bilmaslik uyat emas; o‘rganmaslik imkoniyatni boy beradi.",
+    "O‘qishga ajratilgan vaqt hech qachon butunlay bekor ketmaydi.",
+    "Kuchli natijalar kuchli bilim asosida quriladi.",
+    "Har bir yangi fan yangi fikrlash usulini beradi.",
+    "Bilimga bo‘lgan qiziqish seni boshqalardan ajratishi mumkin.",
+    "O‘rganishda mukammallikdan ko‘ra davomiylikni tanla.",
+    "Bugungi kichik bilim ertangi katta qarorga yordam beradi.",
+    "Kitob o‘qiyotganda faqat so‘zlarni emas, g‘oyalarni izla.",
+    "Bilim seni mustaqil fikrlashga o‘rgatadi.",
+    "Har kuni o‘zingdan bir narsani yaxshiroq biladigan odamga aylanishga harakat qil.",
+    "O‘qishdagi qiyinchilik — miyang ishlayotganining belgisi.",
+    "Murakkab savol seni to‘xtatmasin; u seni chuqurroq fikrlashga majbur qilsin.",
+    "O‘rganish uchun ideal vaqtni kutma.",
+    "Bugun boshlash — mukammal reja kutishdan yaxshiroq.",
+    "Bilim ortgani sari savollaring ham chuqurlashadi.",
+    "O‘qiganingni boshqalarga tushuntira olsang, uni yaxshiroq tushungan bo‘lasan.",
+    "Xotira emas, tushunish bilimning mustahkam poydevoridir.",
+    "Har bir fan sening fikrlash qobiliyatingni mashq qildiradi.",
+    "O‘qish odatga aylanganda natija tabiiy ravishda kuchayadi.",
+    "Bugun qiyin bo‘lgan mavzu bir necha haftadan keyin oddiy tuyulishi mumkin.",
+    "O‘zingni bilim bilan qurollantir.",
+    "Bilim imkoniyatlarni ko‘rishga yordam beradi.",
+    "O‘qish — faqat imtihon uchun emas, hayot uchun ham kerak.",
+    "Har bir savol yangi eshik ochishi mumkin.",
+    "O‘zingga “men buni bilmayman” emas, “men buni hali bilmayman” de.",
+    "O‘rganish jarayoniga hurmat bilan qaragin.",
+    "Har kuni bir qadam tashlash ham oldinga yurishdir.",
+    "Bilimga sarflangan vaqt kelajakdagi qarorlaringni kuchaytiradi.",
+    "O‘qishdagi eng katta raqibing boshqalar emas, kechagi o‘zing.",
+    "Bir sahifa ham nol sahifadan ko‘proqdir.",
+    "O‘rganishni to‘xtatmagan inson o‘z imkoniyatlarini kengaytiradi.",
+    "Har bir yangi so‘z yangi fikrni ifodalash imkonini beradi.",
+    "Bilimni yodlashdan oldin uning ma'nosini tushun.",
+    "O‘qish paytida qiyinchilikka duch kelishing tabiiy.",
+    "Qiyinchilikdan qochish emas, uni tushunish seni kuchaytiradi.",
+    "Har bir o‘rganilgan formula yangi masalalarga yo‘l ochadi.",
+    "Bilimga qiziqish katta kashfiyotlarning boshlanishi bo‘lishi mumkin.",
+    "O‘qish uchun kayfiyat kelishini kutma.",
+    "Intizom kayfiyat bo‘lmagan kunlarda ham ishlashga yordam beradi.",
+    "Har bir kitobdan kamida bitta foydali fikr olishga harakat qil.",
+    "O‘qigan narsangni hayot bilan bog‘la.",
+    "Bilimni amaliyot bilan mustahkamla.",
+    "Savollar qanchalik yaxshi bo‘lsa, izlanish shunchalik chuqur bo‘ladi.",
+    "O‘qishdagi sekinlik muvaffaqiyatsizlik degani emas.",
+    "Muhimi — to‘xtab qolmaslik.",
+    "Har bir kun yangi imkoniyat bilan boshlanadi.",
+    "Bugungi mehnatingni kelajakdagi o‘zing qadrlaydi.",
+    "O‘qish — o‘z imkoniyatlaring chegarasini kengaytirishdir.",
+    "Bilimni hech kim sendan tortib ololmaydigan boylikka aylantir.",
+    "O‘rganish qiyinlashsa, usulingni o‘zgartir, maqsadingni emas.",
+    "Har bir noto‘g‘ri javob to‘g‘ri javobga yaqinlashtirishi mumkin.",
+    "O‘zingni savollar bilan sinab ko‘r.",
+    "O‘qiganingni takrorlash bilimni mustahkamlaydi.",
+    "Qiyin so‘zlarni tashlab ketma; ularni kontekstda tushunishga harakat qil.",
+    "Bilim ko‘pincha kichik odatlarning yig‘indisidir.",
+    "Har kuni bir oz yaxshiroq o‘qish katta farq yaratadi.",
+    "O‘qishdagi sabr kelajakdagi ishonchni yaratadi.",
+    "Yangi bilim seni yangi imkoniyatlarga tayyorlaydi.",
+    "O‘rganish — o‘zingga beradigan sovg‘ang.",
+    "Kitobni tez tugatishdan ko‘ra, uni tushunish muhimroq.",
+    "Har bir mavzuda “nima uchun?” deb so‘ra.",
+    "O‘rganayotgan narsangga qiziqish top.",
+    "Bilim izlashda uyalmay savol ber.",
+    "Har bir kuchli mutaxassis bir vaqtlar boshlovchi bo‘lgan.",
+    "Hech kim tug‘ma ravishda barcha narsani bilmaydi.",
+    "Ustozdan o‘rgan, mustaqil tekshir va amalda sinab ko‘r.",
+    "Bilimni chuqurlashtirish vaqt talab qiladi.",
+    "Shoshilmasdan, lekin to‘xtamasdan o‘rgan.",
+    "Har bir kun miyangga yangi imkoniyat beradi.",
+    "O‘qish kelajakdagi tanlovlaringni ko‘paytiradi.",
+    "O‘rganish orqali o‘z fikringni mustahkamlay olasan.",
+    "Bilim ortgani sari qo‘rquv kamayishi mumkin.",
+    "Qiyin mavzuga qayta-qayta murojaat qilishdan qo‘rqma.",
+    "Birinchi urinishda tushunmaslik — normal.",
+    "O‘rganish jarayonining o‘zi natijaning bir qismidir.",
+    "Har bir kichik g‘alabani qadrlagin.",
+    "O‘zingni bilim bilan emas, bilim olish qobiliyating bilan ham rivojlantir.",
+    "Bugungi o‘qishing ertangi imkoniyatlaring uchun poydevor.",
+    "Bilimga bo‘lgan chanqoqlikni saqla — u seni uzoqqa olib boradi.",
+    "Motivatsiya o‘zgaradi, intizom esa seni davom ettiradi.",
+    "Kayfiyating bo‘lmagan kun ham maqsading bor.",
+    "Kichik vazifani hozir bajarish uni keyinga qoldirishdan osonroq.",
+    "Boshlash uchun mukammal kayfiyat kerak emas.",
+    "Intizom — o‘zingga bergan va'dangni bajarish.",
+    "Har kuni ozgina harakat katta natija yaratadi.",
+    "Dangasalikni kutib o‘tirma; kichik qadam bilan boshlagin.",
+    "Reja tuzish yaxshi, uni bajarish undan ham muhim.",
+    "Bugungi vazifani ertaga qoldirish odatga aylanmasin.",
+    "O‘zingni boshqara olish — katta kuch.",
+    "Bir soatlik diqqatli mehnat ko‘pincha ko‘p soatlik chalg‘ishdan foydaliroq.",
+    "Telefonni chetga qo‘yish ba'zan eng katta yutuq bo‘lishi mumkin.",
+    "Diqqatni boshqarish — vaqtni boshqarishning muhim qismi.",
+    "Boshlagan ishingni imkon qadar tugat.",
+    "Kichik odatlar katta o‘zgarishlarni yaratadi.",
+    "Har kuni bir xil vaqtda o‘qish odatni mustahkamlaydi.",
+    "Intizom kelajakdagi maqsadni bugungi harakat bilan bog‘laydi.",
+    "Qiyin bo‘lganda tezlikni kamaytir, lekin to‘xtama.",
+    "Bir kun o‘tkazib yuborsang, keyingi kun qayt.",
+    "Bir xato butun rejangni buzishiga yo‘l qo‘yma.",
+    "O‘z vaqtida boshlangan ish kamroq stress keltiradi.",
+    "Rejangni kichik qismlarga bo‘l.",
+    "Katta maqsadni kundalik vazifaga aylantir.",
+    "Bugun bajariladigan ishni aniq belgilab ol.",
+    "O‘zingga juda katta va'dalar emas, bajariladigan vazifalar ber.",
+    "Intizom — har kuni bir xil mukammallik emas.",
+    "Intizom — yiqilgandan keyin yana davom etish.",
+    "Qulaylik doimo rivojlanishga olib kelmaydi.",
+    "O‘zingni qiyin vazifalardan himoya qilish emas, ularga tayyorlash muhim.",
+    "Birinchi 10 daqiqani boshlash ko‘pincha eng qiyin qismdir.",
+    "Boshlaganingdan keyin davom ettirish osonlashadi.",
+    "Ishlashni boshlash uchun “keyinroq” degan so‘zni kamaytir.",
+    "Bugungi kichik harakat ertangi katta stressni kamaytiradi.",
+    "Reja seni boshqarishi emas, senga yordam berishi kerak.",
+    "Vaqtingni eng muhim ishlaringga ber.",
+    "Har bir chalg‘ituvchi narsa sening e'tiboring uchun raqib.",
+    "Muhim ish vaqtida keraksiz bildirishnomalarni o‘chir.",
+    "O‘zingni boshqalar bilan emas, kechagi o‘zing bilan taqqosla.",
+    "Intizom o‘z-o‘zini hurmat qilishning bir ko‘rinishi bo‘lishi mumkin.",
+    "O‘zingga bergan va'dalaringni jiddiy qabul qil.",
+    "Katta natijalar ko‘pincha ko‘rinmaydigan kundalik mehnatdan keladi.",
+    "Hech kim sen uchun mashq qila olmaydi.",
+    "O‘qish vaqtida qiyinchilik paydo bo‘lsa, usulni o‘zgartir.",
+    "Biror vazifani yoqtirmasang ham, uni maqsading bilan bog‘la.",
+    "Harakat qilish istagi bo‘lmagan paytda kichik vazifadan boshla.",
+    "“Hammasini birdan” emas, “bir qadamdan” tamoyilini tanla.",
+    "O‘zingni haddan tashqari yuklamasdan izchil bo‘l.",
+    "Dam olish ham rejadagi qism bo‘lishi mumkin.",
+    "Yetarli uyqu diqqatni saqlashga yordam beradi.",
+    "O‘zingni charchatish emas, barqaror ishlash muhim.",
+    "Har bir muvaffaqiyat ortida takrorlangan urinishlar bor.",
+    "Bir marta qila olmagan narsangni yana sinab ko‘r.",
+    "Qiyinchilikdan keyingi davomiylik kuch beradi.",
+    "O‘zingni kechagi holatingdan yaxshiroq qilishga harakat qil.",
+    "Kichik g‘alabalar ishonchni oshiradi.",
+    "O‘qish stoliga o‘tirishning o‘zi emas, diqqat bilan ishlash muhim.",
+    "Vaqtingni oldindan rejalashtirish qarorlar sonini kamaytiradi.",
+    "Har bir kunni yangi boshlanish sifatida qabul qil.",
+    "O‘zingni tanqid qilishdan ko‘ra, xatoni tuzatishga e'tibor ber.",
+    "Intizom qo‘rqitish emas, yo‘nalish berishdir.",
+    "Bugun qilishing mumkin bo‘lgan ishni keraksiz ravishda kechiktirma.",
+    "Birinchi qadam kichik bo‘lishi mumkin.",
+    "O‘zingga “faqat 15 daqiqa” deb boshlashga ruxsat ber.",
+    "Harakat boshlanganda motivatsiya ko‘pincha ortadi.",
+    "O‘z rejangni sodda tut.",
+    "Keraksiz murakkablik ishni boshlashni qiyinlashtiradi.",
+    "Bir vaqtning o‘zida bitta muhim vazifaga e'tibor ber.",
+    "Diqqat tarqalsa, yana vazifaga qayt.",
+    "Mukammal kunni kutma.",
+    "Oddiy kunlarda ham maqsad sari yur.",
+    "Har kuni qayta boshlashga imkon bor.",
+    "Natija darhol ko‘rinmasa ham, mehnat behuda emas.",
+    "Harakatning kuchi uning takrorlanishida.",
+    "O‘zingni kichik vazifalar orqali katta maqsadga olib bor.",
+    "Odatlar kelajakdagi natijalarga ta'sir qiladi.",
+    "Bir kunlik muvaffaqiyatsizlikni butun haftaga aylantirma.",
+    "Rejadan chiqib ketish — rejani butunlay tashlash degani emas.",
+    "Xatodan keyin tezroq tiklanish muhim.",
+    "O‘zingni boshqarish qobiliyati har qanday maqsadda foydali.",
+    "Vaqtingni qadrlasang, imkoniyatlaringni ham qadrlaysan.",
+    "Intizomni jazoga emas, erkinlikka olib boradigan vositaga aylantir.",
+    "Bugungi mehnat kelajakdagi tanlovlarni ko‘paytiradi.",
+    "Har kuni qilinadigan kichik ishni yengil deb mensima.",
+    "Kichik ishlar yig‘ilib katta natijaga aylanadi.",
+    "Qiyin vazifani bo‘laklarga ajrat.",
+    "Boshlashdan oldin hammasini mukammal bilishing shart emas.",
+    "Harakat davomida yaxshiroq usulni topishing mumkin.",
+    "O‘zingni boshlashga majbur qilish ba'zan yetarli.",
+    "Natijani nazorat qila olmasang ham, harakatingni nazorat qila olasan.",
+    "Bugun nazorat qila oladigan narsaga e'tibor ber.",
+    "Boshqalarning tezligi sening rejangni belgilamasin.",
+    "Har bir insonning o‘z rivojlanish tezligi bor.",
+    "O‘zingga sabr bilan, lekin talabchan munosabatda bo‘l.",
+    "Muvaffaqiyatli odatlarni muntazam takrorlash kerak.",
+    "Maqsad katta bo‘lsa, kundalik qadamlarni aniqroq qil.",
+    "Intizom kelajakdagi natijani bugungi qarorga aylantiradi.",
+    "Bugun boshlagan kichik odating bir yil ichida katta farq qilishi mumkin.",
+    "Chalg‘ish — mag‘lubiyat emas; diqqatni qaytarish muhim.",
+    "Davom etish ko‘pincha eng oddiy, ammo eng kuchli qarordir.",
+    "Har kuni ozgina bo‘lsa ham oldinga yur.",
+    "Katta maqsadlar katta sabr talab qiladi.",
+    "Orzu yo‘nalish beradi, mehnat esa yo‘lni bosib o‘tadi.",
+    "Maqsadingni aniq bilsang, kundalik qarorlar osonlashadi.",
+    "Kelajakdagi o‘zing uchun bugun ishlagin.",
+    "Muvaffaqiyatning yagona yo‘li yo‘q.",
+    "O‘z yo‘lingni topish vaqt talab qilishi mumkin.",
+    "Boshqalarning natijasini ko‘rib, o‘z jarayoningni qadrsizlantirma.",
+    "Har bir katta natija kichik boshlanishdan keladi.",
+    "Katta maqsad seni bugungi qulaylikdan tashqariga olib chiqishi mumkin.",
+    "Orzuingni reja bilan bog‘la.",
+    "Rejani harakat bilan bog‘la.",
+    "Harakatni sabr bilan bog‘la.",
+    "Sabrni o‘rganish bilan bog‘la.",
+    "Muvaffaqiyatni faqat natija bilan o‘lchama.",
+    "Jarayonda orttirgan qobiliyating ham yutuq.",
+    "Muvaffaqiyatsizlik ma'lumot berishi mumkin.",
+    "Xato qilganingda sababini top.",
+    "Natija chiqmasa, usulni tahlil qil.",
+    "Kuchli inson xatodan keyin o‘rganadi.",
+    "Tanqidni foydali bo‘lsa, rivojlanish uchun ishlat.",
+    "Boshqalarning fikri maqsadingni to‘liq belgilamasin.",
+    "O‘z qadriyatlaringga mos maqsad tanla.",
+    "Katta orzu uchun kichik qadamlar yetarli boshlanishdir.",
+    "Bugungi qaroring kelajakdagi yo‘lingni o‘zgartirishi mumkin.",
+    "Imkoniyatni kutishdan ko‘ra, tayyor bo‘lishga e'tibor ber.",
+    "Tayyorgarlik ko‘pincha imkoniyatni ko‘rishga yordam beradi.",
+    "O‘zingga yuqori, ammo real talablar qo‘y.",
+    "Natijaga erishishdan oldin ko‘p marta qayta urinishing mumkin.",
+    "Muvaffaqiyat ko‘pincha sabrli insonni sinaydi.",
+    "O‘zingga ishonch harakat orqali kuchayadi.",
+    "Biror narsani bilmasang, o‘rgan.",
+    "Biror narsani uddalay olmasang, mashq qil.",
+    "Birinchi natija ideal bo‘lmasa, uni yaxshila.",
+    "Har bir loyiha tajriba beradi.",
+    "Har bir tajriba kelajakdagi qarorga yordam beradi.",
+    "Muvaffaqiyatni faqat boshqalarning tasdig‘idan izlama.",
+    "O‘zingning rivojlanishingni kuzat.",
+    "Katta maqsadlar ko‘pincha uzoq muddatli fikrlashni talab qiladi.",
+    "Tez natija har doim ham eng yaxshi natija emas.",
+    "Sifatli ish vaqt talab qilishi mumkin.",
+    "O‘zingni rivojlantirishni raqobatga aylantirma.",
+    "Raqobatdan ko‘ra rivojlanishga e'tibor ber.",
+    "Kuchli maqsad kuchli sababga ega bo‘ladi.",
+    "“Nega?” savoliga javobing aniq bo‘lsa, davom etish osonroq.",
+    "Maqsadni yozib qo‘yish uni aniqroq qiladi.",
+    "Katta orzuni kundalik vazifaga aylantir.",
+    "Har bir kichik vazifa katta yo‘lning bir qismidir.",
+    "Muvaffaqiyat tasodifga emas, tayyorgarlikka ham bog‘liq.",
+    "Imkoniyat kelganda tayyor bo‘lish uchun bugun ishlagin.",
+    "Hech kim sening kelajagingni sening o‘rningga qura olmaydi.",
+    "O‘z hayotingdagi qarorlar uchun mas'uliyatni o‘rgan.",
+    "Mas'uliyat kuchli xarakter yaratadi.",
+    "Muammolarni faqat shikoyat qilish bilan hal qilib bo‘lmaydi.",
+    "Muammoni ko‘rganingda yechim izlashni odat qil.",
+    "Katta fikrlar ko‘pincha oddiy savollardan boshlanadi.",
+    "Qiziqishingni rivojlantir.",
+    "Qiziqish yangi imkoniyatlarni ochishi mumkin.",
+    "Biror sohada kuchli bo‘lish uchun vaqt kerak.",
+    "Vaqt talab qiladigan maqsaddan qo‘rqma.",
+    "Uzoq yo‘l kichik qadamlar bilan bosib o‘tiladi.",
+    "O‘zingga “hali” so‘zini eslat.",
+    "Hali erishmagan bo‘lishing — hech qachon erisha olmaysan degani emas.",
+    "Bugungi darajang yakuniy darajang emas.",
+    "Qobiliyat mashq bilan rivojlanadi.",
+    "Bilim, tajriba va mehnat bir-birini kuchaytiradi.",
+    "O‘zingga yangi vazifalar ber.",
+    "Qiyinroq vazifa yangi qobiliyat yaratishi mumkin.",
+    "Muvaffaqiyatni faqat katta g‘alabalardan izlama.",
+    "Har bir yaxshilanishni qadrlagin.",
+    "Bir oy oldingi o‘zing bilan solishtir.",
+    "Bir yil oldingi o‘zing bilan solishtir.",
+    "Rivojlanishingni ko‘rganingda ishonching ortadi.",
+    "Katta maqsadlar ba'zan uzoq vaqt ko‘rinmas natija talab qiladi.",
+    "Ko‘rinmayotgan natija yo‘q degani emas.",
+    "Harakatning ta'siri vaqt bilan yig‘iladi.",
+    "Sabrni maqsadning bir qismi deb bil.",
+    "Kuchli natija uchun kuchli poydevor kerak.",
+    "Poydevorni bilim bilan qur.",
+    "Qobiliyatni mashq bilan kuchaytir.",
+    "Xarakteringni intizom bilan mustahkamla.",
+    "Maqsadingni aniqlik bilan boshqar.",
+    "Muvaffaqiyatni faqat pul yoki mashhurlik bilan o‘lchama.",
+    "Foydali ish qilish ham katta muvaffaqiyatdir.",
+    "Odamlarga qiymat yaratish uzoq muddatli kuchli maqsad bo‘lishi mumkin.",
+    "Muammoni hal qilish — katta qobiliyat.",
+    "Yaxshi savol ko‘pincha yaxshi yechimga olib boradi.",
+    "Muammodan ko‘ra imkoniyatni izla.",
+    "Har bir qiyinchilik yangi ko‘nikma talab qilishi mumkin.",
+    "O‘zgarishdan o‘rgan.",
+    "Yangi vaziyatlarda moslashuvchan bo‘l.",
+    "Muvaffaqiyatli inson hamma narsani bilmaydi; u o‘rganishni davom ettiradi.",
+    "O‘zing bilmagan narsani tan olish rivojlanishning boshlanishidir.",
+    "Yaxshi ustoz topish vaqtni tejashi mumkin.",
+    "Kuchli odamlar bilan suhbatdan o‘rgan.",
+    "Kitoblardan, tajribadan va xatolardan o‘rgan.",
+    "O‘zing yaratgan imkoniyatlarni ham qadrlagin.",
+    "Biror narsa ishlamasa, boshqa yo‘lni sinab ko‘r.",
+    "Taslim bo‘lishdan oldin nimani o‘zgartirish mumkinligini tekshir.",
+    "Katta maqsadingga sodiq qol, lekin unga borish usulingni moslashtir.",
+    "Kelajaging bugungi kichik qarorlaringdan quriladi.",
+    "Albert Einstein ruhidagi fikr: qiziqish bilimning kuchli boshlanishidir.",
+    "Marie Curie ruhidagi fikr: noma'lum narsani tushunishga harakat qil.",
+    "Isaac Newton ruhidagi fikr: katta bilim avvalgi bilimlar ustiga quriladi.",
+    "Stephen Hawking ruhidagi fikr: olamni tushunishga bo‘lgan qiziqishni yo‘qotma.",
+    "Leonardo da Vinci ruhidagi fikr: turli sohalarni o‘rganish fikrlashni boyitadi.",
+    "Galileo Galilei ruhidagi fikr: kuzatish va savol berish ilmiy fikrlashning asosidir.",
+    "Nikola Tesla ruhidagi fikr: tasavvur yangi g‘oyalarni ko‘rishga yordam beradi.",
+    "Ada Lovelace ruhidagi fikr: matematika ijodkorlik bilan ham bog‘liq bo‘lishi mumkin.",
+    "Alan Turing ruhidagi fikr: murakkab muammoni mantiqiy qismlarga ajrat.",
+    "Charles Darwin ruhidagi fikr: kuzatishdan saboq ol va dalillarga e'tibor ber.",
+    "Louis Pasteur ruhidagi fikr: imkoniyat ko‘pincha tayyorlangan ongga foyda beradi.",
+    "Richard Feynman ruhidagi fikr: biror narsani tushunish uchun uni sodda qilib tushuntirib ko‘r.",
+    "Carl Sagan ruhidagi fikr: koinot haqidagi savollar hayratni saqlashga yordam beradi.",
+    "Jane Goodall ruhidagi fikr: tabiatni kuzatish sabr va e'tibor talab qiladi.",
+    "Katherine Johnson ruhidagi fikr: matematika murakkab vazifalarni hal qilishda kuchli vosita.",
+    "George Washington Carver ruhidagi fikr: mavjud narsadan yangi imkoniyat topishga harakat qil.",
+    "Thomas Edison ruhidagi fikr: tajriba natijasi keyingi urinishga ma'lumot beradi.",
+    "Benjamin Franklin ruhidagi fikr: vaqtni foydali ishlarga sarflash muhim.",
+    "Alexander Graham Bell ruhidagi fikr: imkoniyatni izlash va harakat qilish bir-birini to‘ldiradi.",
+    "Wright birodarlar ruhidagi fikr: katta g‘oya tajriba va takroriy sinov orqali rivojlanadi.",
+    "Aristotel ruhidagi fikr: yaxshi odatlar xarakterga ta'sir qiladi.",
+    "Sokrat ruhidagi fikr: savol berish fikrlashni chuqurlashtiradi.",
+    "Platon ruhidagi fikr: ta'lim insonning fikrlashini o‘zgartirishi mumkin.",
+    "Ibn Sino ruhidagi fikr: bilim va amaliy tajribani birlashtirish foydali.",
+    "Al-Xorazmiy ruhidagi fikr: mantiqiy fikrlash murakkab masalalarni tartibga soladi.",
+    "Al-Beruniy ruhidagi fikr: kuzatish va dalilga tayanish muhim.",
+    "Ulug‘bek ruhidagi fikr: ilm uzoq muddatli mehnat va aniqlikni talab qiladi.",
+    "Forobiy ruhidagi fikr: bilim va tarbiya inson rivojida muhim o‘rin tutadi.",
+    "Abu Rayhon Beruniy ruhidagi fikr: dunyoni tushunish uchun tekshirish va kuzatish kerak.",
+    "Leonhard Euler ruhidagi fikr: murakkab matematika ham izchil fikrlash orqali o‘rganiladi.",
+    "Carl Friedrich Gauss ruhidagi fikr: aniqlik va chuqur fikrlash matematikada muhim.",
+    "Emmy Noether ruhidagi fikr: abstrakt fikrlash ham amaliy fanlarga katta ta'sir ko‘rsatishi mumkin.",
+    "Srinivasa Ramanujan ruhidagi fikr: matematikaga chuqur qiziqish yangi g‘oyalarni tug‘dirishi mumkin.",
+    "Niels Bohr ruhidagi fikr: murakkab hodisalarni tushunish uchun fikrni moslashtirish kerak.",
+    "Rosalind Franklin ruhidagi fikr: dalillarni sinchiklab o‘rganish ilmiy ishning asosidir.",
+    "Dmitri Mendeleev ruhidagi fikr: tartib va tizim murakkab ma'lumotni tushunishga yordam beradi.",
+    "Gregor Mendel ruhidagi fikr: tajribalarni muntazam kuzatish katta xulosalarga olib kelishi mumkin.",
+    "Rachel Carson ruhidagi fikr: tabiatni chuqur kuzatish muhim savollarni ochib beradi.",
+    "Barbara McClintock ruhidagi fikr: kuzatishdagi sabr kutilmagan kashfiyotlarga olib kelishi mumkin.",
+    "Dorothy Hodgkin ruhidagi fikr: murakkab ilmiy muammoni yechish sabr talab qiladi.",
+    "Chandrasekhara Venkata Raman ruhidagi fikr: kundalik hodisalarning o‘zida ilmiy savollar bo‘lishi mumkin.",
+    "Subrahmanyan Chandrasekhar ruhidagi fikr: chuqur ilmiy ish uzoq muddatli diqqatni talab qiladi.",
+    "Enrico Fermi ruhidagi fikr: murakkab muammoni taxmin va hisob orqali qismlarga ajrat.",
+    "James Clerk Maxwell ruhidagi fikr: turli g‘oyalar o‘rtasidagi bog‘lanishni izla.",
+    "Michael Faraday ruhidagi fikr: tajriba orqali o‘rganish nazariyani chuqurlashtiradi.",
+    "Antoine Lavoisier ruhidagi fikr: o‘lchash va aniqlik ilmiy fikrlashning asosidir.",
+    "Robert Hooke ruhidagi fikr: oddiy ko‘ringan narsani ham chuqurroq tekshir.",
+    "Archimedes ruhidagi fikr: muammoni boshqa nuqtai nazardan ko‘rish yangi yechim berishi mumkin.",
+    "Euclid ruhidagi fikr: murakkab matematikani aniq qoidalar orqali tushun.",
+    "Pifagor ruhidagi fikr: matematikadagi tartibni izlash fikrlashni rivojlantiradi.",
+    "Steve Jobs ruhidagi fikr: texnologiyani inson ehtiyojlari bilan bog‘lashga harakat qil.",
+    "Bill Gates ruhidagi fikr: yangi bilimni doimiy o‘rganish kelajak uchun foydali.",
+    "Elon Musk ruhidagi fikr: muammoni asosiy tamoyillarga ajratib ko‘r.",
+    "Jeff Bezos ruhidagi fikr: uzoq muddatli fikrlash katta qarorlarda muhim.",
+    "Warren Buffett ruhidagi fikr: bilimni muntazam yig‘ish vaqt o‘tishi bilan katta farq yaratadi.",
+    "Oprah Winfrey ruhidagi fikr: tajribadan o‘rganish insonni rivojlantirishi mumkin.",
+    "Michael Jordan ruhidagi fikr: mashq va takroriy urinish mahoratni rivojlantiradi.",
+    "Serena Williams ruhidagi fikr: yuqori darajaga chiqish uchun muntazam mehnat kerak.",
+    "Cristiano Ronaldo ruhidagi fikr: yuqori natija uchun mashg‘ulotga jiddiy munosabat kerak.",
+    "Usain Bolt ruhidagi fikr: tabiiy qobiliyatni mehnat bilan rivojlantirish kerak.",
+    "Simone Biles ruhidagi fikr: murakkab ko‘nikmalar vaqt va mashq talab qiladi.",
+    "Michael Phelps ruhidagi fikr: katta maqsadni kundalik mashg‘ulotlarga aylantir.",
+    "Sergey Brin ruhidagi fikr: texnologiya orqali yangi muammolarni hal qilishga harakat qil.",
+    "Larry Page ruhidagi fikr: katta savollar katta texnologik imkoniyatlarni ochishi mumkin.",
+    "Mark Zuckerberg ruhidagi fikr: katta loyiha kichik boshlanishdan rivojlanishi mumkin.",
+    "Richard Branson ruhidagi fikr: yangi narsani sinashdan o‘rganish mumkin.",
+    "Sara Blakely ruhidagi fikr: muvaffaqiyatsizlikni o‘rganish jarayonining bir qismi sifatida ko‘r.",
+    "Walt Disney ruhidagi fikr: tasavvur va harakat birlashganda g‘oya loyihaga aylanadi.",
+    "Henry Ford ruhidagi fikr: katta vazifani kichik qismlarga bo‘lish uni boshqarishni osonlashtiradi.",
+    "Andrew Carnegie ruhidagi fikr: o‘z ustingda ishlash uzoq muddatli foyda beradi.",
+    "Nelson Mandela ruhidagi fikr: katta o‘zgarishlar sabr va qat'iyat talab qiladi.",
+    "Martin Luther King Jr. ruhidagi fikr: katta maqsadlar odamlarni birlashtira oladi.",
+    "Mahatma Gandhi ruhidagi fikr: o‘zgarish kundalik harakatlardan boshlanishi mumkin.",
+    "Abraham Lincoln ruhidagi fikr: qiyin davrlar xarakter va qat'iyatni sinaydi.",
+    "Winston Churchill ruhidagi fikr: qiyinchilik paytida davom etish muhim.",
+    "Eleanor Roosevelt ruhidagi fikr: o‘z imkoniyatlaringni boshqalarning cheklovlari bilan belgilama.",
+    "Amelia Earhart ruhidagi fikr: yangi yo‘nalishlarni sinash jasorat talab qiladi.",
+    "Helen Keller ruhidagi fikr: imkoniyatlarni ko‘rish uchun qat'iyat kerak.",
+    "Maya Angelou ruhidagi fikr: o‘z tajribangdan ma'no topishga harakat qil.",
+    "Martin Scorsese ruhidagi fikr: ijodiy mahorat uzoq vaqt davomida rivojlanadi.",
+    "J. K. Rowling ruhidagi fikr: qiyin davrlar yangi yo‘nalish boshlanishiga sabab bo‘lishi mumkin.",
+    "George Orwell ruhidagi fikr: fikrni aniq ifodalash uchun aniq o‘ylash kerak.",
+    "William Shakespeare ruhidagi fikr: inson tajribasini kuzatish dunyoqarashni kengaytiradi.",
+    "Victor Hugo ruhidagi fikr: katta g‘oyalar uzoq vaqt davomida ta'sir qilishi mumkin.",
+    "Leo Tolstoy ruhidagi fikr: inson o‘z hayotini ichki qarorlar orqali o‘zgartiradi.",
+    "Mark Twain ruhidagi fikr: o‘rganish tajribadan ham keladi.",
+    "Stephen King ruhidagi fikr: mahoratni muntazam mashq bilan rivojlantirish kerak.",
+    "Agatha Christie ruhidagi fikr: kuzatuvchanlik muammolarni tushunishga yordam beradi.",
+    "Jane Austen ruhidagi fikr: insonlarni va vaziyatlarni diqqat bilan kuzatish foydali.",
+    "Victor Frankl ruhidagi fikr: inson qiyin sharoitlarda ham ma'no izlashga harakat qilishi mumkin.",
+    "Carl Jung ruhidagi fikr: o‘zini tushunish shaxsiy rivojlanishning bir qismidir.",
+    "Daniel Kahneman ruhidagi fikr: qarorlarimiz haqida tanqidiy fikrlash foydali.",
+    "Peter Drucker ruhidagi fikr: samaradorlik uchun muhim ishlarni ajratish kerak.",
+    "Stephen Covey ruhidagi fikr: muhim ishlarni oldindan belgilash vaqtni boshqarishga yordam beradi.",
+    "Jim Rohn ruhidagi fikr: kundalik odatlar uzoq muddatli natijaga ta'sir qiladi.",
+    "Tony Robbins ruhidagi fikr: maqsadni aniq belgilash harakatni yo‘naltiradi.",
+    "Simon Sinek ruhidagi fikr: “nima uchun?” savoliga javob maqsadni kuchaytirishi mumkin.",
+    "Cal Newport ruhidagi fikr: chuqur diqqat bilan ishlash murakkab ko‘nikmalarni rivojlantirishga yordam beradi.",
+    "Bugungi reading mashqi ertangi natijang uchun xizmat qiladi.",
+    "Bilmagan so‘zingni ko‘rish — uni o‘rganish imkoniyatidir.",
+    "Har bir noto‘g‘ri javob nimani yaxshilash kerakligini ko‘rsatadi.",
+    "SATdagi qiyin savol seni qo‘rqitmasin; uni tahlil qil.",
+    "CEFRdagi har bir xato keyingi mashq uchun yo‘nalish beradi.",
+    "Ingliz tilidagi har bir yangi so‘z fikringni aniqroq ifodalashga yordam beradi.",
+    "Har kuni ozgina reading katta lug‘at boyligiga olib keladi.",
+    "Birinchi o‘qishda hamma narsani tushunmaslik normal.",
+    "Matnni qayta o‘qish — vaqtni behuda sarflash emas.",
+    "Qiyin scientific article seni kuchliroq readerga aylantirishi mumkin.",
+    "Noma'lum so‘zdan qo‘rqma; kontekst orqali ma'nosini topishga harakat qil.",
+    "Har bir matn yangi bilim bilan birga yangi vocabulary beradi.",
+    "SAT readingda tezlikdan oldin tushunishni mustahkamla.",
+    "CEFR uchun faqat so‘z emas, ularning qo‘llanishini ham o‘rgan.",
+    "Bir so‘zni bilish va uni gapda ishlata olish ikki xil ko‘nikma.",
+    "Yangi vocabularyni gaplarda ishlat.",
+    "Har kuni bir nechta yangi so‘z ham vaqt o‘tishi bilan ko‘payadi.",
+    "Bugun o‘rgangan so‘zing ertaga readingda tanish bo‘lib qolishi mumkin.",
+    "Readingdagi qiyinchilik seni to‘xtatmasin.",
+    "Qiyin matnlar miyangni murakkab ingliz tiliga moslashtiradi.",
+    "Har bir testdan keyin xatolar daftarini yurit.",
+    "Xatolarni faqat belgilama; sababini tushun.",
+    "Bir xil xatoni qayta qilmaslik — katta progress.",
+    "Test natijasi sening butun qobiliyatingni belgilamaydi.",
+    "Bugungi ball — yakuniy natija emas.",
+    "Har bir mashq keyingi natijaga tayyorgarlikdir.",
+    "SAT yoki CEFRga tayyorlanish marafonga o‘xshaydi.",
+    "Bir kunda hammasini o‘rganish shart emas.",
+    "Muhimi — muntazam rivojlanish.",
+    "Bir oy davomida izchil ishlash katta farq yaratishi mumkin.",
+    "Har kuni bir oz reading qil.",
+    "Har kuni bir oz vocabulary takrorla.",
+    "Har kuni grammarni amalda ishlat.",
+    "Har kuni o‘z xatolaringdan birini tuzat.",
+    "Writingda fikringni aniq ifodalashga e'tibor ber.",
+    "Murakkab so‘z ishlatishdan ko‘ra, uni to‘g‘ri ishlatish muhim.",
+    "Kuchli essay aniq fikr va mantiqiy tuzilishga tayanadi.",
+    "Speakingda mukammal bo‘lishga emas, fikrni ravon yetkazishga intil.",
+    "Xato qilishdan qo‘rqib gapirmay qolma.",
+    "Har bir speaking mashqi ishonchingni oshiradi.",
+    "O‘zingni ovozga yozib, xatolaringni tahlil qil.",
+    "Listeningda har bir so‘zni tushunishga majburlama; asosiy ma'noni ushla.",
+    "Readingda matnning tuzilishini kuzat.",
+    "Muallifning asosiy fikrini topishga odatlan.",
+    "Dalil va xulosani ajratishni o‘rgan.",
+    "SATda savolni shoshilmasdan, aniq o‘qi.",
+    "Javobni tanlashdan oldin dalilni top.",
+    "CEFRda topshiriq talabini to‘liq bajar.",
+    "Vaqtni oldindan taqsimlash imtihonda yordam beradi.",
+    "Imtihon oldidan yangi mavzularni haddan tashqari ko‘paytirma.",
+    "O‘rganganlaringni takrorlashga vaqt qoldir.",
+    "Yetarli dam olish ham tayyorgarlikning bir qismidir.",
+    "Imtihon kuni miyangga kerakli energiyani saqla.",
+    "O‘zingni boshqa o‘quvchilar bilan doimiy taqqoslama.",
+    "Kimdir tezroq o‘rganishi sening imkoniyatingni kamaytirmaydi.",
+    "Sening asosiy raqibing — kechagi o‘zing.",
+    "Bugun 10 ta savol yaxshi ishlansa, bu ham progress.",
+    "Bugun bitta qiyin mavzuni tushunish ham yutuq.",
+    "Bugun o‘rgangan vocabularying kelajakda yana uchraydi.",
+    "Har bir qaytarilgan so‘z xotirada mustahkamroq joylashadi.",
+    "Maqsading yuqori bo‘lsa, tayyorgarliging ham izchil bo‘lsin.",
+    "Yuqori ball bir kechada yaratilmaydi.",
+    "Kuchli natija kundalik mehnatning yig‘indisidir.",
+    "Xatolar seni natijadan uzoqlashtirmaydi; ularni tahlil qilmaslik uzoqlashtiradi.",
+    "Har bir mock test — haqiqiy imtihon uchun mashq.",
+    "Mock testdan keyingi tahlil testning o‘zidan kam emas.",
+    "Qaysi savollarda ko‘p xato qilayotganingni aniqlagin.",
+    "Zaif joylaringni yashirma; ularni kuchaytir.",
+    "Kuchli tomonlaringni ham rivojlantirishni davom ettir.",
+    "Har kuni kichik maqsad qo‘y.",
+    "Haftalik natijangni kuzat.",
+    "O‘sishingni raqamlar bilan ham tekshir.",
+    "Bir necha haftalik progressni bir kunlik kayfiyat bilan baholama.",
+    "Bugungi qiyinchilik kelajakdagi kuchli ko‘nikmaga aylanishi mumkin.",
+    "Ingliz tilida o‘ylashga asta-sekin odatlan.",
+    "O‘qigan maqolalaringdan yangi iboralarni ajrat.",
+    "Yangi so‘zlarni faqat tarjima bilan emas, kontekst bilan o‘rgan.",
+    "Bir so‘zning sinonimlari va collocationlarini ham o‘rgan.",
+    "Vocabularyni muntazam takrorlash unutishni kamaytiradi.",
+    "Har bir yangi so‘z sening akademik imkoniyatlaringni kengaytiradi.",
+    "Matematikada javobdan ko‘ra yechim jarayonini tushun.",
+    "Qiyin masalani kichik qismlarga bo‘l.",
+    "Birinchi urinishda chiqmagan masalani keyinroq qayta yech.",
+    "Javobni yodlashdan ko‘ra usulni tushun.",
+    "Matematika ko‘p jihatdan mashq orqali kuchayadi.",
+    "Har bir qiyin masala fikrlash mushagini mashq qildiradi.",
+    "Imtihon natijasi muhim, lekin o‘rganilgan ko‘nikmalar undan ham uzoq xizmat qiladi.",
+    "Universitet maqsading bugungi tayyorgarligingga yo‘nalish bersin.",
+    "Kelajakdagi universitetga bugungi odatlaring bilan yaqinlashasan.",
+    "Katta universitetlar katta imkoniyat berishi mumkin, ammo tayyorgarlikni sen qilasan.",
+    "Grant orzusi bo‘lsa, bilim va natijangni bugundan qur.",
+    "Kuchli portfolio kichik loyihalardan boshlanishi mumkin.",
+    "Matematikani, ingliz tilini va texnologiyani birlashtirish yangi imkoniyatlar yaratishi mumkin.",
+    "Har bir yangi ko‘nikma kelajakdagi tanlovlaringni ko‘paytiradi.",
+    "Bugungi o‘qishing kelajakdagi mustaqilligingga xizmat qiladi.",
+    "Bir yil keyingi o‘zing bugungi mehnating uchun minnatdor bo‘lishi mumkin.",
+    "Maqsading uzoq bo‘lsa ham, bugungi qadam juda yaqin.",
+    "Sen hammasini bugun tugatishing shart emas; bugun boshlashing kerak.",
+    "Bir kun kelib bugungi qiyin kunlaring tajribaga aylanishi mumkin.",
+    "Orzuing qanchalik katta bo‘lmasin, uni bugungi bitta sahifa, bitta masala va bitta qadamdan boshlash mumkin. 🔥"
+  ];
+
+  const realToday = new Date();
+  
+  function getFormattedDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  const todayStr = getFormattedDate(realToday);
+  let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), 1);
+  let selectedDateStr = todayStr;
+
+  const monthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktabr", "Noyabr", "Dekabr"];
+
+  const PALETTE_20 = [
+    '#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4',
+    '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E',
+    '#84CC16', '#14B8A6', '#0EA5E9', '#A855F7', '#D946EF',
+    '#EAB308', '#22C55E', '#2563EB', '#7C3AED', '#DB2777'
+  ];
+
+  let selectedColor = PALETTE_20[0];
+
+  let todos = JSON.parse(localStorage.getItem('kiyano_todos_v9')) || {};
+  let streakData = JSON.parse(localStorage.getItem('kiyano_streak_v9')) || { count: 0, lastDate: '' };
+  
+  let monthlyGoals = JSON.parse(localStorage.getItem('kiyano_monthly_goals_v11')) || {
+    "2026-08": [
+      { text: "SAT 1600 olish", done: false },
+      { text: "IELTS 8.0 tayyorgarligi", done: false }
+    ]
+  };
+
+  if (!todos[todayStr]) {
+    todos[todayStr] = [
+      { text: "Matematika masala yechish", minutes: 120, spentMinutes: 0, color: "#EF4444", done: false },
+      { text: "Ingliz tili IELTS Reading", minutes: 60, spentMinutes: 0, color: "#3B82F6", done: false }
+    ];
+  }
+
+  const WORK_TIME = 25 * 60;       
+  let activeTaskIndex = null;
+  let activeTaskDate = todayStr;
+  let timeLeft = WORK_TIME;
+  let timerId = null;
+  let statFilter = 'month';
+
+  let selectedHours = 0;
+  let selectedMinutes = 30;
+
+  function formatMinutesReadable(totalMins) {
+    if (!totalMins || totalMins === 0) return "0 min";
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (h > 0 && m > 0) return `${h} soat ${m} min`;
+    if (h > 0) return `${h} soat`;
+    return `${m} min`;
+  }
+
+  function switchTab(tabId, el) {
+    document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(n => n.classList.remove('active'));
+    
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    
+    if (el) {
+      el.classList.add('active');
+    } else {
+      const desktopIndex = ['dashboard', 'focus', 'plans', 'stats'].indexOf(tabId);
+      const desktopItems = document.querySelectorAll('.desktop-nav .nav-item');
+      const bottomItems = document.querySelectorAll('.bottom-nav-item');
+      if (desktopItems[desktopIndex]) desktopItems[desktopIndex].classList.add('active');
+      if (bottomItems[desktopIndex]) bottomItems[desktopIndex].classList.add('active');
+    }
+
+    const titles = { dashboard: 'Dashboard', focus: 'Focus Room', plans: 'Rejalar & Kalendar', stats: 'Statistika' };
+    document.getElementById('headerTitle').innerText = titles[tabId];
+
+    if (tabId === 'dashboard') renderDashboard();
+    if (tabId === 'focus') renderFocusRoom();
+    if (tabId === 'stats') renderStats();
+    if (tabId === 'plans') renderCalendar();
+  }
+
+  function toggleTheme() {
+    const isLight = document.body.getAttribute('data-theme') === 'light';
+    document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+    document.getElementById('globalThemeBtn').innerText = isLight ? '☀️ Light' : '🌙 Dark';
+  }
+
+  // --- DASHBOARD ---
+  function renderDashboard() {
+    const hours = realToday.getHours();
+    let timeGreeting = `Salom, do'stim! Xayrli kun!`;
+    if (hours < 11) timeGreeting = `Xayrli tong, do'stim! 🌅`;
+    else if (hours < 18) timeGreeting = `Xayrli kun, do'stim! ☀️`;
+    else timeGreeting = `Xayrli kech, do'stim! 🌙`;
+
+    document.getElementById('heroGreeting').innerText = timeGreeting;
+
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    document.getElementById('heroQuote').innerText = randomQuote;
+
+    const todayTodos = todos[todayStr] || [];
+    let totalSpentMins = 0;
+    let doneCount = 0;
+
+    todayTodos.forEach(t => {
+      totalSpentMins += (t.spentMinutes || 0);
+      if (t.done) doneCount++;
+    });
+
+    document.getElementById('dashFocusHours').innerText = formatMinutesReadable(totalSpentMins);
+    document.getElementById('dashTaskCount').innerText = `${doneCount} / ${todayTodos.length}`;
+
+    const percent = todayTodos.length > 0 ? Math.round((doneCount / todayTodos.length) * 100) : 0;
+    document.getElementById('dashTaskPercent').innerText = `${percent}% bajarildi`;
+    document.getElementById('dashProgressBar').style.width = `${percent}%`;
+
+    const congratTitle = document.getElementById('congratTitle');
+    const congratText = document.getElementById('congratText');
+    const congratIcon = document.getElementById('congratIcon');
+
+    if (percent === 100 && todayTodos.length > 0) {
+      congratIcon.innerText = "🎉";
+      congratTitle.innerText = `Tabriklayman, do'stim!`;
+      congratText.innerText = `Siz bugungi barcha rejalaringizni muvaffaqiyatli yakunladingiz! Ajoyib natija!`;
+    } else if (doneCount > 0) {
+      congratIcon.innerText = "💪";
+      congratTitle.innerText = `Ajoyib harakat, do'stim!`;
+      congratText.innerText = `Bugun allaqachon ${doneCount} ta vazifani bajardingiz. Shu zaymda davom eting!`;
+    } else {
+      congratIcon.innerText = "🎯";
+      congratTitle.innerText = `Xush kelibsiz, do'stim!`;
+      congratText.innerText = "Bugungi birinchi vazifani boshlash vaqti keldi!";
+    }
+
+    const dashTodoList = document.getElementById('dashTodoList');
+    if (dashTodoList) {
+      dashTodoList.innerHTML = '';
+      if (todayTodos.length === 0) {
+        dashTodoList.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; font-size:13px;">Bugun uchun rejalaringiz yo'q.</div>`;
+      } else {
+        todayTodos.forEach((todo, idx) => {
+          const item = document.createElement('div');
+          item.className = `todo-item ${todo.done ? 'done' : ''}`;
+          item.style.borderLeftColor = todo.color || 'var(--accent)';
+          item.innerHTML = `
+            <div class="todo-main-row">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" class="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodoDone('${todayStr}', ${idx})">
+                <span class="todo-text" style="font-weight:600;">${todo.text}</span>
+              </div>
+              <span class="time-badge">${formatMinutesReadable(todo.minutes)}</span>
+            </div>
+          `;
+          dashTodoList.appendChild(item);
+        });
+      }
+    }
+  }
+
+  function toggleTodoDone(dateStr, index) {
+    if (todos[dateStr] && todos[dateStr][index]) {
+      todos[dateStr][index].done = !todos[dateStr][index].done;
+      localStorage.setItem('kiyano_todos_v9', JSON.stringify(todos));
+      renderDashboard();
+    }
+  }
+
+  // --- KALENDAR VA REJALAR ---
+  function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const monthTitle = document.getElementById('calendarMonthTitle');
+    if (monthTitle) monthTitle.innerText = `${monthNames[month]} ${year} Maqsadlari 🎯`;
+
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].forEach(d => {
+      const head = document.createElement('div');
+      head.className = 'cal-day-head';
+      head.innerText = d;
+      grid.appendChild(head);
+    });
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const adjustedFirstDay = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevDays = new Date(year, month, 0).getDate();
+
+    for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+      const dayNum = prevDays - i;
+      const cell = document.createElement('div');
+      cell.className = 'cal-date other-month';
+      cell.innerText = dayNum;
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+      const cell = document.createElement('div');
+      const mStr = String(month + 1).padStart(2, '0');
+      const dStr = String(d).padStart(2, '0');
+      const dateStr = `${year}-${mStr}-${dStr}`;
+
+      cell.className = 'cal-date';
+      if (dateStr === todayStr) cell.classList.add('is-today');
+      if (dateStr === selectedDateStr) cell.classList.add('active');
+
+      cell.innerText = d;
+      cell.onclick = () => selectDate(dateStr);
+      grid.appendChild(cell);
+    }
+
+    renderTodoListForSelectedDate();
+  }
+
+  function selectDate(dateStr) {
+    selectedDateStr = dateStr;
+    renderCalendar();
+  }
+
+  function renderTodoListForSelectedDate() {
+    const titleEl = document.getElementById('selectedDateTitle');
+    const listEl = document.getElementById('todoList');
+    if (!titleEl || !listEl) return;
+
+    titleEl.innerText = `${selectedDateStr} sanasidagi rejalar:`;
+    listEl.innerHTML = '';
+
+    const dayTasks = todos[selectedDateStr] || [];
+    if (dayTasks.length === 0) {
+      listEl.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:16px; font-size:13px;">Bu kunda rejalar mavjud emas.</div>`;
+      return;
+    }
+
+    dayTasks.forEach((t, idx) => {
+      const item = document.createElement('div');
+      item.className = `todo-item ${t.done ? 'done' : ''}`;
+      item.style.borderLeftColor = t.color || 'var(--accent)';
+      item.innerHTML = `
+        <div class="todo-main-row">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" class="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodoDone('${selectedDateStr}', ${idx})">
+            <span class="todo-text" style="font-weight:600;">${t.text}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="time-badge">${formatMinutesReadable(t.minutes)}</span>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:11px;" onclick="deleteTodo('${selectedDateStr}', ${idx})">✕</button>
+          </div>
+        </div>
+      `;
+      listEl.appendChild(item);
+    });
+  }
+
+  function deleteTodo(dateStr, index) {
+    if (todos[dateStr]) {
+      todos[dateStr].splice(index, 1);
+      localStorage.setItem('kiyano_todos_v9', JSON.stringify(todos));
+      renderTodoListForSelectedDate();
+      renderDashboard();
+    }
+  }
+
+  // --- REJA QO'SHISH VA WHEEL PICKER ---
+  function openTodoModal() {
+    document.getElementById('todoInput').value = '';
+    document.getElementById('todoModal').style.display = 'flex';
+    initWheelPickers();
+    initColorPicker();
+  }
+
+  function closeTodoModal() {
+    document.getElementById('todoModal').style.display = 'none';
+  }
+
+  function initColorPicker() {
+    const grid = document.getElementById('colorPickerGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    PALETTE_20.forEach((color, idx) => {
+      const div = document.createElement('div');
+      div.className = `color-option ${color === selectedColor ? 'selected' : ''}`;
+      div.style.backgroundColor = color;
+      div.onclick = () => {
+        selectedColor = color;
+        initColorPicker();
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  function initWheelPickers() {
+    setupWheel('hoursWheel', 12, selectedHours, val => selectedHours = val);
+    setupWheel('minsWheel', 60, selectedMinutes, val => selectedMinutes = val, 5);
+  }
+
+  function setupWheel(elementId, maxVal, initialVal, callback, step = 1) {
+    const box = document.getElementById(elementId);
+    if (!box) return;
+    box.innerHTML = '<div class="wheel-spacer"></div>';
+
+    for (let i = 0; i <= maxVal; i += step) {
+      const item = document.createElement('div');
+      item.className = `wheel-item ${i === initialVal ? 'selected' : ''}`;
+      item.innerText = String(i).padStart(2, '0');
+      item.onclick = () => {
+        box.scrollTop = (i / step) * 44;
+      };
+      box.appendChild(item);
+    }
+    box.innerHTML += '<div class="wheel-spacer"></div>';
+    
+    setTimeout(() => {
+      box.scrollTop = (initialVal / step) * 44;
+    }, 50);
+  }
+
+  function handleWheelScroll(type) {
+    const boxId = type === 'hours' ? 'hoursWheel' : 'minsWheel';
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const index = Math.round(box.scrollTop / 44);
+    const step = type === 'hours' ? 1 : 5;
+    const val = index * step;
+
+    if (type === 'hours') selectedHours = val;
+    else selectedMinutes = val;
+
+    const items = box.querySelectorAll('.wheel-item');
+    items.forEach((item, idx) => {
+      if (idx === index) item.classList.add('selected');
+      else item.classList.remove('selected');
+    });
+  }
+
+  function addTodo() {
+    const input = document.getElementById('todoInput');
+    const text = input ? input.value.trim() : '';
+    if (!text) {
+      alert("Iltimos, vazifa nomini kiriting!");
+      return;
+    }
+
+    const totalMins = (selectedHours * 60) + selectedMinutes;
+    if (totalMins <= 0) {
+      alert("Iltimos, vaqtni tanlang!");
+      return;
+    }
+
+    if (!todos[selectedDateStr]) todos[selectedDateStr] = [];
+    todos[selectedDateStr].push({
+      text: text,
+      minutes: totalMins,
+      spentMinutes: 0,
+      color: selectedColor,
+      done: false
+    });
+
+    localStorage.setItem('kiyano_todos_v9', JSON.stringify(todos));
+    closeTodoModal();
+    renderTodoListForSelectedDate();
+    renderDashboard();
+  }
+
+  // --- OYLIK MAQSADLAR ---
+  function openGoalModal() {
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const key = `${year}-${month}`;
+
+    const titleEl = document.getElementById('goalModalTitle');
+    if (titleEl) titleEl.innerText = `${monthNames[currentDate.getMonth()]} ${year} Maqsadlari 🎯`;
+
+    renderMonthlyGoalsList();
+    document.getElementById('goalModal').style.display = 'flex';
+  }
+
+  function closeGoalModal() {
+    document.getElementById('goalModal').style.display = 'none';
+  }
+
+  function renderMonthlyGoalsList() {
+    const container = document.getElementById('goalListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const key = `${year}-${month}`;
+
+    const goals = monthlyGoals[key] || [];
+    if (goals.length === 0) {
+      container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:12px; font-size:13px;">Hozircha maqsadlar kiritilmagan.</div>`;
+      return;
+    }
+
+    goals.forEach((g, idx) => {
+      const card = document.createElement('div');
+      card.className = `goal-item-card ${g.done ? 'done' : ''}`;
+      card.innerHTML = `
+        <div class="goal-item-left" onclick="toggleMonthlyGoal('${key}', ${idx})">
+          <input type="checkbox" class="checkbox" ${g.done ? 'checked' : ''} style="pointer-events:none;">
+          <span class="goal-item-text">${g.text}</span>
+        </div>
+        <button class="delete-goal-btn" onclick="deleteMonthlyGoal('${key}', ${idx})">✕</button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function addMonthlyGoal() {
+    const input = document.getElementById('newGoalInput');
+    const text = input ? input.value.trim() : '';
+    if (!text) return;
+
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const key = `${year}-${month}`;
+
+    if (!monthlyGoals[key]) monthlyGoals[key] = [];
+    monthlyGoals[key].push({ text, done: false });
+
+    localStorage.setItem('kiyano_monthly_goals_v11', JSON.stringify(monthlyGoals));
+    input.value = '';
+    renderMonthlyGoalsList();
+  }
+
+  function toggleMonthlyGoal(key, index) {
+    if (monthlyGoals[key] && monthlyGoals[key][index]) {
+      monthlyGoals[key][index].done = !monthlyGoals[key][index].done;
+      localStorage.setItem('kiyano_monthly_goals_v11', JSON.stringify(monthlyGoals));
+      renderMonthlyGoalsList();
+    }
+  }
+
+  function deleteMonthlyGoal(key, index) {
+    if (monthlyGoals[key]) {
+      monthlyGoals[key].splice(index, 1);
+      localStorage.setItem('kiyano_monthly_goals_v11', JSON.stringify(monthlyGoals));
+      renderMonthlyGoalsList();
+    }
+  }
+
+  // --- FOCUS ROOM ---
+  function renderFocusRoom() {
+    const container = document.getElementById('focusTodoList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const todayTodos = todos[todayStr] || [];
+    if (todayTodos.length === 0) {
+      container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Bugungi rejalar mavjud emas. Avval reja qo'shing!</div>`;
+      return;
+    }
+
+    todayTodos.forEach((t, idx) => {
+      const item = document.createElement('div');
+      item.className = 'todo-item';
+      item.style.borderLeftColor = t.color || 'var(--accent)';
+      item.innerHTML = `
+        <div class="todo-main-row">
+          <span style="font-weight:700;">${t.text}</span>
+          <button class="btn btn-sm" onclick="startFocusTask('${todayStr}', ${idx})">▶ Boshlash</button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function startFocusTask(dateStr, idx) {
+    activeTaskDate = dateStr;
+    activeTaskIndex = idx;
+    const task = todos[dateStr][idx];
+
+    document.getElementById('currentTaskDisplay').innerText = `Vazifa: ${task.text}`;
+    document.getElementById('fullscreenTimerModal').classList.add('active');
+    resetTimer();
+  }
+
+  function closeFullscreenTimer() {
+    document.getElementById('fullscreenTimerModal').classList.remove('active');
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  function minimizeTimer() {
+    document.getElementById('fullscreenTimerModal').classList.remove('active');
+    document.getElementById('miniTimerWidget').classList.add('active');
+    updateMiniTimerDisplay();
+  }
+
+  function maximizeTimer() {
+    document.getElementById('miniTimerWidget').classList.remove('active');
+    document.getElementById('fullscreenTimerModal').classList.add('active');
+  }
+
+  function updateMiniTimerDisplay() {
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    document.getElementById('miniTimerTime').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (activeTaskIndex !== null && todos[activeTaskDate] && todos[activeTaskDate][activeTaskIndex]) {
+      document.getElementById('miniTimerTask').innerText = todos[activeTaskDate][activeTaskIndex].text;
+    }
+  }
+
+  function toggleTimer() {
+    const btn = document.getElementById('startBtn');
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+      btn.innerText = "Davom etish";
+    } else {
+      btn.innerText = "Pauza";
+      timerId = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateTimerDisplay();
+        } else {
+          clearInterval(timerId);
+          timerId = null;
+          alert(`Tabriklayman, do'stim! Fokus vaqtini muvaffaqiyatli yakunladingiz! 🎯`);
+          if (activeTaskIndex !== null && todos[activeTaskDate] && todos[activeTaskDate][activeTaskIndex]) {
+            todos[activeTaskDate][activeTaskIndex].spentMinutes = (todos[activeTaskDate][activeTaskIndex].spentMinutes || 0) + 25;
+            localStorage.setItem('kiyano_todos_v9', JSON.stringify(todos));
+          }
+          closeFullscreenTimer();
+          document.getElementById('miniTimerWidget').classList.remove('active');
+          renderDashboard();
+        }
+      }, 1000);
+    }
+  }
+
+  function resetTimer() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+    timeLeft = WORK_TIME;
+    document.getElementById('startBtn').innerText = "Boshlash";
+    updateTimerDisplay();
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('timerDisplay').innerText = timeStr;
+
+    const circumference = 660; // 2 * pi * 105
+    const offset = circumference - (circumference * timeLeft) / WORK_TIME;
+    const path = document.getElementById('progressPath');
+    if (path) {
+      path.style.strokeDasharray = circumference;
+      path.style.strokeDashoffset = offset;
+    }
+
+    if (document.getElementById('miniTimerWidget').classList.contains('active')) {
+      updateMiniTimerDisplay();
+    }
+  }
+
+  // --- STATISTIKA ---
+  function setStatFilter(filter, el) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    statFilter = filter;
+    renderStats();
+  }
+
+  function renderStats() {
+    let totalMins = 0;
+    const categoryMap = {};
+
+    Object.keys(todos).forEach(dateStr => {
+      (todos[dateStr] || []).forEach(t => {
+        const spent = t.spentMinutes || 0;
+        totalMins += spent;
+        const cat = t.text || "Boshqa";
+        categoryMap[cat] = (categoryMap[cat] || 0) + spent;
+      });
+    });
+
+    document.getElementById('statHours').innerText = formatMinutesReadable(totalMins);
+
+    const svg = document.getElementById('statSvg');
+    const breakdown = document.getElementById('statsBreakdown');
+    if (!svg || !breakdown) return;
+
+    svg.innerHTML = '';
+    breakdown.innerHTML = '';
+
+    if (totalMins === 0) {
+      svg.innerHTML = `<circle cx="50" cy="50" r="38" fill="none" stroke="var(--circle-bg)" stroke-width="12"></circle>`;
+      breakdown.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:13px;">Hozircha statistika mavjud emas.</div>`;
+      return;
+    }
+
+    let cumulativePercent = 0;
+    let colorIdx = 0;
+
+    Object.keys(categoryMap).forEach(cat => {
+      const mins = categoryMap[cat];
+      const percent = (mins / totalMins) * 100;
+      const strokeDasharray = `${percent} ${100 - percent}`;
+      const strokeDashoffset = -cumulativePercent;
+
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", "50");
+      circle.setAttribute("cy", "50");
+      circle.setAttribute("r", "38");
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", PALETTE_20[colorIdx % PALETTE_20.length]);
+      circle.setAttribute("stroke-width", "12");
+      circle.setAttribute("stroke-dasharray", strokeDasharray);
+      circle.setAttribute("stroke-dashoffset", strokeDashoffset);
+      svg.appendChild(circle);
+
+      const row = document.createElement('div');
+      row.style.cssText = "display:flex; justify-content:space-between; align-items:center; font-size:13px;";
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:10px; height:10px; border-radius:3px; background:${PALETTE_20[colorIdx % PALETTE_20.length]}"></div>
+          <span style="font-weight:600;">${cat}</span>
+        </div>
+        <span style="font-weight:700; color:var(--text-muted);">${formatMinutesReadable(mins)}</span>
+      `;
+      breakdown.appendChild(row);
+
+      cumulativePercent += percent;
+      colorIdx++;
+    });
+  }
+
+  renderDashboard();
+</script>
+</body>
+</html>
